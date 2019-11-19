@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>Track widget simulation - 4.13</title>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+      }
+    </style>
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.13/esri/themes/light/main.css"
+    />
+
+    <script>
+      var dojoConfig = {
+        packages: [
+          {
+            name: "geolocate",
+            location: "//2gis.github.io/mock-geolocation/dist",
+            main: "geolocate"
+          }
+        ]
+      };
+    </script>
+
+    <script src="https://js.arcgis.com/4.13/"></script>
+
+    <script>
+      require([
+        "geolocate", // geolocation simulator (https://github.com/2gis/mock-geolocation)
+        "esri/widgets/Track",
+        "esri/views/SceneView",
+        "esri/Map"
+      ], function(geolocate, Track, SceneView, Map) {
+        // geolocation simulator
+        stubGeolocation();
+
+        var map = new Map({
+          basemap: "streets-navigation-vector"
+        });
+
+        var view = new SceneView({
+          map: map,
+          container: "viewDiv",
+          center: [-4.4741536666667,36.7138665],
+          zoom: 12,
+          ui: {
+            components: ["attribution"] // replace default set of UI components
+          }
+        });
+
+        var track = new Track({
+          view: view,
+          goToLocationEnabled: false // disable this since we want to control what happens after our location is acquired
+        });
+        view.ui.add(track, "top-left");
+
+        view.when(function() {
+          var prevLocation = view.center;
+
+          track.on("track", function() {
+            var location = track.graphic.geometry;
+
+            view.goTo({
+              center: location,
+              tilt: 50,
+              scale: 2500,
+              heading: 360 - getHeading(location, prevLocation), // only applies to SceneView
+              rotation: 360 - getHeading(location, prevLocation) // only applies to MapView
+            });
+
+            prevLocation = location.clone();
+          });
+
+          track.start();
+        });
+
+        function getHeading(point, oldPoint) {
+          // get angle between two points
+          var angleInDegrees =
+            (Math.atan2(point.y - oldPoint.y, point.x - oldPoint.x) * 180) /
+            Math.PI;
+
+          // move heading north
+          return -90 + angleInDegrees;
+        }
+
+        // geolocation simulator
+        function stubGeolocation() {
+          const socket = new WebSocket('ws://localhost:8000');
+          geolocate.use();
+          socket.addEventListener('message', function (event) {
+            try {
+              let data = JSON.parse(event.data);
+              geolocate.change({ lat : data.lat, lng: data.lon });
+            } catch(err) {
+              console.error("Unable to parse");
+            }
+
+          });
+
+        }
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>
