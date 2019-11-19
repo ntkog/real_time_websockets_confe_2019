@@ -2,7 +2,7 @@ const WebSocket = require('ws');
 const fetch = require('node-fetch');
 const jsonfile = require('jsonfile');
 const wss = new WebSocket.Server({ port: 8000 });
-const TRACKING_BUS = [581,590,593,596];
+const TRACKING_BUS = [581];
 const REFRESH_TIME = 2000;
 
 const DATA = require('./stations.json');
