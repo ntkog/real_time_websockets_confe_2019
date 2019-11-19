@@ -51,7 +51,7 @@ node simple.js
 - Servidor de websockets
 
 ```bash
-node red_buses_serial.js
+node red_buses.js 8002
 ```
 
 - Dirección
